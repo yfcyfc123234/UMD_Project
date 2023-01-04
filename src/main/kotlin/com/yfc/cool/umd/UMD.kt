@@ -205,7 +205,7 @@ class UMD {
                     val sizeChapterSingle = 4
                     val chapterSingleBytes = fileHelper?.seekAndRead(position, sizeChapterSingle)
                     val chapterSingleOffset = fileHelper!!.getLong(chapterSingleBytes)
-                    it.offset = chapterSingleOffset
+                    it.offset = chapterSingleOffset / 2
                     position += sizeChapterSingle
                 }
             }
@@ -247,6 +247,17 @@ class UMD {
                 val chapterDataSize = if (chapter?.chaptersData.isNullOrEmpty()) 0 else chapter!!.chaptersData!!.size
 
                 if (chapterDataSizeCheck.toInt() == chapterDataSize) {
+                    chapter?.apply {
+                        val offset = chaptersData?.first()?.offset ?: 0
+                        chaptersTitle?.forEach {
+                            it.offset += offset
+                        }
+
+//                        val read = fileHelper?.seekAndRead(chaptersTitle!![0].offset, chaptersTitle!![1].offset)
+//                        val string = fileHelper?.getString(read)
+//                        println()
+                    }
+
                     position += chapterDataBlockRandomBytesArray.size
                     return position
                 } else {
