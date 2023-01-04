@@ -28,7 +28,7 @@ class UMDProperty : UMDBean() {
     var gender: String? = null // 0x07 0x00 小说类型
     var publisher: String? = null // 0x08 0x00 出版商
     var vendor: String? = null // 0x09 0x00 零售商
-    var fileLength: Long = 0 // 0x0B, 0x00, 0x00, 0x09 小说未压缩时的内容总长度（字节）
+    var fileLengthUncompressed: Long = 0 // 0x0B, 0x00, 0x00, 0x09 小说未压缩时的内容总长度（字节）
 
     fun getDate(): String = "${year}-${month}-${day}"
 
@@ -40,6 +40,6 @@ class UMDProperty : UMDBean() {
     }
 
     override fun toString(): String {
-        return "UMDProperty(type=$type, title=$title, author=$author, year=$year, month=$month, day=$day, gender=$gender, publisher=$publisher, vendor=$vendor, fileLength=$fileLength)"
+        return "UMDProperty(type=$type, title=$title, author=$author, year=$year, month=$month, day=$day, gender=$gender, publisher=$publisher, vendor=$vendor, fileLengthUncompressed=$fileLengthUncompressed)"
     }
 }

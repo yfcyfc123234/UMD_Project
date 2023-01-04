@@ -17,19 +17,19 @@ class UMDFileHelper {
         return if (readLength <= Int.MAX_VALUE) {
             seekAndRead(pos, readLength.toInt())
         } else {
-            var poition = pos
+            var position = pos
             var length = readLength
             var result = byteArrayOf()
             while (length >= Int.MAX_VALUE) {
-                val read = seekAndRead(poition, Int.MAX_VALUE)
+                val read = seekAndRead(position, Int.MAX_VALUE)
                 result = result.plus(read)
                 length -= Int.MAX_VALUE
-                poition += Int.MAX_VALUE
+                position += Int.MAX_VALUE
             }
 
-            val read = seekAndRead(poition, length)
+            val read = seekAndRead(position, length)
             result = result.plus(read)
-            poition += length
+            position += length
 
             seek(pos)
 

@@ -59,7 +59,7 @@ class UMD {
                     var pos = parseHeader()
                     pos = parseProperty(pos)
                     pos = parseChapter(pos)
-                    pos = parseCover(pos)
+                    parseCover(pos)
                     parseEnd()
 
                     parseStatus = UMDParseStatus.STATUS_SUCCESS
@@ -148,7 +148,7 @@ class UMD {
             val size = UMDProperty.fileLengthBytes.size
             val fileLengthBytes = fileHelper?.seekAndRead(position, size)
 
-            property?.fileLength = fileHelper!!.getLong(fileLengthBytes)
+            property?.fileLengthUncompressed = fileHelper!!.getLong(fileLengthBytes)
 
             position += size
         } else {
@@ -189,7 +189,7 @@ class UMD {
         val randomBytes2 = fileHelper?.seekAndRead(position, UMDChapters.randomBytes.size)
         position += UMDChapters.randomBytes.size
 
-        if (randomBytes1?.contentEquals(randomBytes2) == true) {
+        if (randomBytes1.contentEquals(randomBytes2)) {
             val size = 4
 
             val chapterLengthBytes = fileHelper?.seekAndRead(position, size)
@@ -215,7 +215,7 @@ class UMD {
             position += UMDChapters.randomBytes.size + UMDChapters.separator.size
             val randomBytesTitle2 = fileHelper?.seekAndRead(position, UMDChapters.randomBytes.size)
             position += UMDChapters.randomBytes.size
-            if (randomBytesTitle1?.contentEquals(randomBytesTitle2) == true) {
+            if (randomBytesTitle1.contentEquals(randomBytesTitle2)) {
                 val sizeTitle = 4
 
                 val chapterTitleLengthBytes = fileHelper?.seekAndRead(position, sizeTitle)
