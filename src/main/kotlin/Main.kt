@@ -11,8 +11,8 @@ fun main(args: Array<String>?) {
 }
 
 private fun test() {
-//    val filePath = "C:\\Users\\admin\\Desktop\\测试文件\\umd\\天涯-青春疼痛小说：用左手爱你.umd"
-    val filePath = "C:\\Users\\admin\\Desktop\\测试文件\\umd\\明朝那些事儿（1-7全套）终极版.umd"
+    val filePath = "C:\\Users\\admin\\Desktop\\测试文件\\umd\\天涯-青春疼痛小说：用左手爱你.umd"
+//    val filePath = "C:\\Users\\admin\\Desktop\\测试文件\\umd\\明朝那些事儿（1-7全套）终极版.umd"
     UMD().apply {
         parseFile(filePath, true) { success ->
             if (success) {

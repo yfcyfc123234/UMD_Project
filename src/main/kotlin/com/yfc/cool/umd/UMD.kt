@@ -15,6 +15,8 @@ class UMD {
     companion object {
         private val tag = UMD::class.java.simpleName
 
+        private const val DEBUG = true
+
         private val SEPARATOR = byteArrayOf(0X23)
         private val UMD_HEADER = byteArrayOf(0x89.toByte(), 0X9B.toByte(), 0X9A.toByte(), 0XDE.toByte())
         private val unknown1 = byteArrayOf(0x01, 0X00, 0X00, 0X08)
@@ -388,14 +390,20 @@ class UMD {
     }
 
     private fun logD(log: String) {
-        LogUtil.logD(tag, log)
+        if (DEBUG) {
+            LogUtil.logD(tag, log)
+        }
     }
 
     private fun logE(log: Any?) {
-        LogUtil.logE(tag, log)
+        if (DEBUG) {
+            LogUtil.logE(tag, log)
+        }
     }
 
     private fun logE(log: Throwable) {
-        LogUtil.logE(tag, log)
+        if (DEBUG) {
+            LogUtil.logE(tag, log)
+        }
     }
 }
