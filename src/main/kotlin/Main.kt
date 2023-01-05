@@ -1,4 +1,6 @@
 import com.yfc.cool.umd.UMD
+import java.io.File
+import java.nio.charset.StandardCharsets
 
 fun main(args: Array<String>?) {
 //    println("Hello World!")
@@ -23,6 +25,31 @@ private fun test(filePath: String) {
                 println(chapter)
                 println()
                 println(cover)
+
+                chapter?.apply {
+                    val file = File("C:\\Users\\admin\\Desktop\\明朝那些事儿（1-7全套）终极版")
+                    file.mkdirs()
+
+                    val fileData = File(file, file.nameWithoutExtension + ".txt")
+                    fileData.delete()
+                    this.chaptersData?.forEachIndexed { index, umdChapterData ->
+                        fileData.appendText(
+                            "\n" +
+                                    "\n" +
+                                    "\n" +
+                                    "\n" +
+                                    "\n" +
+                                    "\n" +
+                                    "\n" +
+                                    "\n" +
+                                    "\n" +
+                                    "\n" +
+                                    "\n" +
+                                    "\n" +
+                                    "\n" + "${index}${index}${index}${index}\n\n\n\n\n\n\n\n\n\n\n\n\n${umdChapterData.data}", StandardCharsets.UTF_8
+                        )
+                    }
+                }
             }
         }
     }

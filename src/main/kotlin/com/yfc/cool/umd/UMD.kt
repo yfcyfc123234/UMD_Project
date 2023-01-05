@@ -78,6 +78,9 @@ class UMD {
         }
     }
 
+    /**
+     * 解析文件长度
+     */
     private fun parseEnd() {
         val bytes = SEPARATOR.plus(UMD_END)
         val size = bytes.size + 4
@@ -91,6 +94,9 @@ class UMD {
         }
     }
 
+    /**
+     * 判断是否是UMD格式的电子书
+     */
     private fun parseHeader(): Long {
         val headerLength = UMD_HEADER.size.toLong()
         val umdFormat = fileHelper?.seekAndRead(0, headerLength.toInt())
@@ -104,6 +110,9 @@ class UMD {
         }
     }
 
+    /**
+     * 解析一些可能存在的属性
+     */
     private fun parseProperty(pos: Long): Long {
         property = UMDProperty()
 
@@ -130,6 +139,9 @@ class UMD {
         }
     }
 
+    /**
+     * 按类型解析一些可能存在的属性
+     */
     private fun parseProperty(pos: Long, bytes: ByteArray): Long {
         var position = pos
 
@@ -180,6 +192,9 @@ class UMD {
         return position
     }
 
+    /**
+     * 解析目录和正文内容
+     */
     private fun parseChapter(pos: Long): Long {
         chapter = UMDChapters()
 
@@ -271,6 +286,9 @@ class UMD {
         }
     }
 
+    /**
+     * 解析正文(循环)
+     */
     private fun parseChapterDataBlock(pos: Long): Long {
         var position = pos
 
@@ -318,6 +336,10 @@ class UMD {
         return position
     }
 
+    /**
+     * 解析正文时
+     * 判断是否需要跳过某些字节 或者 是否解析正文完成
+     */
     private fun parseChapterDataBlockJump(pos: Long): Long {
         var position = pos
 
@@ -344,6 +366,9 @@ class UMD {
         return position
     }
 
+    /**
+     * 解析封面图片
+     */
     private fun parseCover(pos: Long): Long {
         var position = pos
 
@@ -373,6 +398,9 @@ class UMD {
         }
     }
 
+    /**
+     * 重置属性
+     */
     fun reset() {
         parseStatus = UMDParseStatus.STATUS_DEFAULT
 
@@ -395,6 +423,9 @@ class UMD {
         resetFileHelper()
     }
 
+    /**
+     * 重置文件帮助类
+     */
     private fun resetFileHelper() {
         fileHelper?.reset()
         fileHelper = null
