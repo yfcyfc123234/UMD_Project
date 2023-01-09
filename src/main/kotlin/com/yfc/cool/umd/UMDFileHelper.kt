@@ -81,21 +81,15 @@ class UMDFileHelper {
         }
     }
 
-    fun getLong(byteArray: ByteArray?): Long {
-        return if (byteArray != null) {
-            byteArray.reverse()
-            BigInteger(byteArray).toLong()
-        } else {
-            0L
-        }
-    }
+    fun getLong(byteArray: ByteArray?): Long = getBigInteger(byteArray).toLong()
+    fun getInt(byteArray: ByteArray?): Int = getBigInteger(byteArray).toInt()
 
-    fun getInt(byteArray: ByteArray?): Int {
+    private fun getBigInteger(byteArray: ByteArray?): BigInteger {
         return if (byteArray != null) {
             byteArray.reverse()
-            BigInteger(byteArray).toInt()
+            BigInteger(byteArray)
         } else {
-            0
+            BigInteger(ByteUtil.getEmptyBytes(1))
         }
     }
 

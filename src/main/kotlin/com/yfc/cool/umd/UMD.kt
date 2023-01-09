@@ -5,8 +5,13 @@ import com.yfc.cool.umd.bean.UMDCover
 import com.yfc.cool.umd.bean.UMDHeader
 import com.yfc.cool.umd.bean.UMDProperty
 import com.yfc.cool.util.LogUtil
+import com.yfc.cool.util.LogUtil.logD
+import com.yfc.cool.util.LogUtil.logE
 import com.yfc.cool.util.ZLibUtils
 import java.io.File
+import java.nio.charset.Charset
+import java.util.*
+import kotlin.collections.HashMap
 import kotlin.concurrent.thread
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
@@ -29,7 +34,6 @@ class UMD {
     var filePath: String? = null
     var fileLength: Long = 0
     var fileLengthUMD: Long = 0
-    var loadDataToMemory = false
 
     var parseStatus: UMDParseStatus = UMDParseStatus.STATUS_DEFAULT
     var header: UMDHeader? = null
@@ -40,12 +44,16 @@ class UMD {
     private var chapterDataBlockRandomBytes = byteArrayOf()
     private var chapterDataBlockRandomBytesArray: Array<String> = arrayOf()
 
-    fun parseFile(filePath: String, loadDataToMemory: Boolean = false, listener: ((Boolean) -> Unit)? = null) {
-        parseFile(File(filePath), loadDataToMemory, listener)
-    }
+    fun parseFile(
+        filePath: String,
+        listener: ((umd: UMD, success: Boolean) -> Unit)? = null,
+    ) = parseFile(File(filePath), listener)
 
     @OptIn(ExperimentalTime::class)
-    fun parseFile(file: File, loadDataToMemory: Boolean = false, listener: ((Boolean) -> Unit)? = null) {
+    fun parseFile(
+        file: File,
+        listener: ((umd: UMD, success: Boolean) -> Unit)? = null,
+    ) {
         thread {
             reset()
 
@@ -53,7 +61,6 @@ class UMD {
                 val duration = measureTime {
                     this.filePath = file.absolutePath
                     this.fileLength = file.length()
-                    this.loadDataToMemory = loadDataToMemory
                     this.fileHelper = UMDFileHelper().apply { init(file) }
 
                     var pos = parseHeader()
@@ -67,13 +74,13 @@ class UMD {
                 }
 
                 logD("parseFile success $duration")
-                listener?.invoke(true)
+                listener?.invoke(this, true)
             }.onFailure {
                 parseStatus = UMDParseStatus.STATUS_FAILED
                 reset()
 
                 logE(it)
-                listener?.invoke(false)
+                listener?.invoke(this, false)
             }
         }
     }
@@ -214,13 +221,13 @@ class UMD {
 
             chapter?.apply {
                 this.chaptersSize = (chapterSize - 9) / 4
-                this.chaptersTitle = MutableList(this.chaptersSize) { _ -> UMDChapters.UMDChapterTitle() }
+                this.chaptersTitleAndContent = MutableList(this.chaptersSize) { _ -> UMDChapters.UMDChapterTitleAndContent() }
 
-                this.chaptersTitle!!.forEach {
+                this.chaptersTitleAndContent!!.forEach {
                     val sizeChapterSingle = 4
                     val chapterSingleBytes = fileHelper?.seekAndRead(position, sizeChapterSingle)
                     val chapterSingleOffset = fileHelper!!.getLong(chapterSingleBytes)
-                    it.offset = chapterSingleOffset / 2
+                    it.offset = chapterSingleOffset
                     position += sizeChapterSingle
                 }
             }
@@ -242,7 +249,7 @@ class UMD {
 
                 for (i in 0 until chapter!!.chaptersSize) {
                     val temp = fileHelper?.seekAndRead(position + 1, singleChapterTitleSize - 1)
-                    chapter!!.chaptersTitle!![i].title = fileHelper?.getString(temp)
+                    chapter!!.chaptersTitleAndContent!![i].title = fileHelper?.getString(temp)
 
                     position += singleChapterTitleSize
                 }
@@ -259,19 +266,10 @@ class UMD {
 
                 val chapterDataSizeCheck = ((fileHelper?.getLong(fileHelper?.seekAndRead(position, 4)) ?: 0) - 9) / 4
                 position += 4
-                val chapterDataSize = if (chapter?.chaptersData.isNullOrEmpty()) 0 else chapter!!.chaptersData!!.size
+                val chapterDataSize = if (chapter?.chaptersOriginalData.isNullOrEmpty()) 0 else chapter!!.chaptersOriginalData!!.size
 
                 if (chapterDataSizeCheck.toInt() == chapterDataSize) {
-                    chapter?.apply {
-                        val offset = chaptersData?.first()?.offset ?: 0
-                        chaptersTitle?.forEach {
-                            it.offset += offset
-                        }
-
-//                        val read = fileHelper?.seekAndRead(chaptersTitle!![0].offset, chaptersTitle!![1].offset)
-//                        val string = fileHelper?.getString(read)
-//                        println()
-                    }
+                    relevanceChapterAndContent()
 
                     position += chapterDataBlockRandomBytesArray.size
                     return position
@@ -283,6 +281,38 @@ class UMD {
             }
         } else {
             throw UMDException("解析失败，章节校验未通过")
+        }
+    }
+
+    /**
+     * 关联标题和内容
+     */
+    private fun relevanceChapterAndContent() {
+        chapter?.apply {
+            var allContentBytes = byteArrayOf()
+            chaptersOriginalData?.forEach {
+                val bytes = ZLibUtils.decompress(fileHelper?.seekAndRead(it.offset, it.length) ?: byteArrayOf())
+                allContentBytes = allContentBytes.plus(bytes)
+            }
+
+            chaptersTitleAndContent?.let {
+                if (it.isNotEmpty()) {
+                    it.forEachIndexed { index, bean ->
+                        if (index < it.size - 1) {
+                            bean.length = it[index + 1].offset - bean.offset
+                        } else {
+                            bean.length = allContentBytes.size - bean.offset
+                        }
+
+                        val byteArray = allContentBytes.copyOfRange(bean.offset.toInt(), (bean.offset + bean.length).toInt())
+                        byteArray.reverse()
+                        bean.content = String(byteArray, Charset.forName("UNICODE"))
+                            .reversed()
+                            .replace("\u2029", "\r\n")
+                            .replace("\u0000", "")
+                    }
+                }
+            }
         }
     }
 
@@ -316,15 +346,12 @@ class UMD {
         position += chapterDataLengthBytes!!.size
         val seekAndRead = fileHelper?.seekAndRead(position, chapterDataLength)
 
-        var data: String? = null
-        if (loadDataToMemory) {
-            data = fileHelper?.getString(ZLibUtils.decompress(seekAndRead!!))
-        }
+        val data = fileHelper?.getString(ZLibUtils.decompress(seekAndRead!!))
 
-        if (chapter?.chaptersData.isNullOrEmpty()) {
-            chapter?.chaptersData = mutableListOf()
+        if (chapter?.chaptersOriginalData.isNullOrEmpty()) {
+            chapter?.chaptersOriginalData = mutableListOf()
         }
-        chapter?.chaptersData?.add(UMDChapters.UMDChapterData().apply {
+        chapter?.chaptersOriginalData?.add(UMDChapters.UMDChapterOriginalData().apply {
             this.filePath = this@UMD.filePath
             this.offset = position
             this.length = chapterDataLength
@@ -407,7 +434,6 @@ class UMD {
         filePath = null
         fileLength = 0
         fileLengthUMD = 0
-        loadDataToMemory = false
 
         header = null
         property = null

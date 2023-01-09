@@ -19,31 +19,33 @@ class UMDChapters : UMDBean() {
     }
 
     var chaptersSize: Int = 0
-    var chaptersData: MutableList<UMDChapterData>? = null
-    var chaptersTitle: MutableList<UMDChapterTitle>? = null
+    var chaptersOriginalData: MutableList<UMDChapterOriginalData>? = null
+    var chaptersTitleAndContent: MutableList<UMDChapterTitleAndContent>? = null
 
     override fun toString(): String {
         return "UMDChapters(" +
                 "chaptersSize=$chaptersSize, " +
-                "chaptersData=${if (chaptersData.isNullOrEmpty()) "null" else chaptersData!!.size.toString()}, " +
-                "\nchaptersTitle=$chaptersTitle" +
+                "chaptersOriginalData=${if (chaptersOriginalData.isNullOrEmpty()) "null" else chaptersOriginalData!!.size.toString()}, " +
+                "\nchaptersTitleAndContent=$chaptersTitleAndContent" +
                 ")"
     }
 
-    class UMDChapterTitle : UMDBean() {
+    class UMDChapterTitleAndContent : UMDBean() {
         companion object {
             private const val serialVersionUID: Long = -220330632556807410L
         }
 
         var offset: Long = 0L
+        var length: Long = 0L
         var title: String? = null
+        var content: String? = null
 
         override fun toString(): String {
-            return "UMDChapterTitle(offset=$offset, title=$title)\n"
+            return "UMDChapterTitleAndContent(offset=$offset, length=$length, title=$title, content=${if (content.isNullOrEmpty()) "null" else content?.length.toString()})\n"
         }
     }
 
-    class UMDChapterData : UMDBean() {
+    class UMDChapterOriginalData : UMDBean() {
         companion object {
             private const val serialVersionUID: Long = 6982003890271432585L
         }
@@ -52,20 +54,9 @@ class UMDChapters : UMDBean() {
         var offset: Long = 0L
         var length: Long = 0L
         var data: String? = null
-            get() {
-                kotlin.runCatching {
-                    if (field.isNullOrEmpty()) {
-                        val helper = UMDFileHelper()
-                        helper.init(File(filePath ?: ""))
-                        field = helper.getString(ZLibUtils.decompress(helper.seekAndRead(offset, length)))
-                        helper.reset()
-                    }
-                }
-                return field
-            }
 
         override fun toString(): String {
-            return "UMDChapterData(filePath=$filePath, offset=$offset, length=$length)"
+            return "UMDChapterOriginalData(filePath=$filePath, offset=$offset, length=$length, data=${if (data.isNullOrEmpty()) "null" else data?.length.toString()})"
         }
     }
 }
